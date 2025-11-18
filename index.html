@@ -406,14 +406,24 @@
         extraContext = filesText;
       }
 
-      const payload = {
-        designName,
-        targetPlatform,
-        designInput,
-        extraContext,
-        imageData: imageBase64
-      };
+     const payload = {
+    designName: designNameInput.value,
+    targetPlatform: platformSelect.value,
+    designInput: mainPrompt.value,
+    extraContext: additionalContext.value || "",
+    fileText: uploadedTextFileContent || "",
+    imageData: uploadedImageBase64 || ""
+};
 
+const response = await fetch(FLOW_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+});
+
+const json = await response.json();
+document.getElementById("aiOutput").innerText = json.result;
+      
       statusText.textContent = "Calling flow…";
 
       try {
@@ -454,3 +464,4 @@
   </script>
 </body>
 </html>
+
