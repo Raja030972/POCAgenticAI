@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Design → Power Platform UI Agent (POC)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    textarea { width: 100%; height: 150px; }
+    pre { background: #f4f4f4; padding: 10px; max-height: 300px; overflow: auto; }
+    .row { margin-bottom: 12px; }
+    label { display: block; font-weight: bold; margin-bottom: 4px; }
+    select, input[type="text"] { width: 100%; padding: 6px; }
+    button { padding: 8px 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Design → Power Apps / Power Pages Suggestions</h1>
+
+  <div class="row">
+    <label for="designName">Design Name</label>
+    <input id="designName" type="text" placeholder="Customer Form – Canvas" />
+  </div>
+
+  <div class="row">
+    <label for="targetPlatform">Target Platform</label>
+    <select id="targetPlatform">
+      <option value="Canvas">Canvas</option>
+      <option value="PowerPages">PowerPages</option>
+      <option value="Both">Both</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="designInput">Design Input (HTML / Figma description / text)</label>
+    <textarea id="designInput" placeholder="Describe the screen or paste HTML here..."></textarea>
+  </div>
+
+  <button id="btnGenerate">Generate Suggestions</button>
+
+  <h2>AI Suggestions (JSON)</h2>
+  <pre id="result"></pre>
+
+  <script>
+    const flowUrl = "YOUR_FLOW_HTTP_TRIGGER_URL_HERE"; // <-- paste Power Automate URL
+
+    document.getElementById('btnGenerate').addEventListener('click', async () => {
+      const designName = document.getElementById('designName').value;
+      const targetPlatform = document.getElementById('targetPlatform').value;
+      const designInput = document.getElementById('designInput').value;
+      const resultEl = document.getElementById('result');
+
+      if (!designName || !designInput) {
+        alert("Please enter a Design Name and Design Input.");
+        return;
+      }
+
+      resultEl.textContent = "Calling agent...";
+
+      try {
+        const response = await fetch(flowUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            designName: designName,
+            targetPlatform: targetPlatform,
+            designInput: designInput
+          })
+        });
+
+        if (!response.ok) {
+          resultEl.textContent = "Error from flow: " + response.status + " " + response.statusText;
+          return;
+        }
+
+        const data = await response.json();
+        resultEl.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error(err);
+        resultEl.textContent = "Error calling flow: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
