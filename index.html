@@ -85,7 +85,7 @@
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     textarea {
-      min-height: 160px;
+      min-height: 120px;
       resize: vertical;
       white-space: pre-wrap;
     }
@@ -111,7 +111,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 120px;
+      min-height: 140px;
       position: relative;
       background: #f9fafb;
       text-align: center;
@@ -125,7 +125,7 @@
     }
     .dropzone img {
       max-width: 100%;
-      max-height: 210px;
+      max-height: 220px;
       border-radius: 8px;
       object-fit: contain;
     }
@@ -173,26 +173,22 @@
       overflow: auto;
       max-height: 520px;
     }
-    .result-box empty::before {
-      content: "AI suggestions will appear here…";
-      color: #6b7280;
-    }
   </style>
 </head>
 <body>
   <div class="page">
     <h1>Design → Power Apps / Power Pages Suggestions</h1>
     <div class="subtitle">
-      Type any prompt + paste Figma / HTML / notes. Optionally attach files and a screenshot.
-      The AI will respond like ChatGPT, powered by your Power Automate flow.
+      Type your prompt, paste Figma / CSS / HTML as text, attach text files, and upload or paste a screenshot.
+      The response comes from your Power Automate flow.
     </div>
 
     <div class="layout">
-      <!-- Left: Input -->
+      <!-- LEFT: INPUT -->
       <div class="card">
         <h2>Design Input</h2>
         <div class="hint">
-          Explain what you want (implementation plan, HTML/CSS, Canvas screens, etc.).
+          This is the main prompt the AI will follow.
         </div>
 
         <div class="row">
@@ -214,23 +210,30 @@
         <div class="row-single">
           <label for="designInput">Design Input / Prompt (HTML / Figma / text)</label>
           <textarea id="designInput"
-            placeholder="Describe your requirements, paste Figma CSS / HTML / notes, or ask a question.&#10;&#10;Example: 'Please give me a step-by-step implementation plan to make this Québec landing page mobile responsive in Power Pages, using the attached screenshot and CSS.'"></textarea>
+            placeholder="Example: Please give me a step-by-step implementation plan to make this Québec landing page mobile responsive in Power Pages..."></textarea>
         </div>
 
         <div class="row-single">
-          <label for="extraFiles">Attach Figma / CSS / HTML / JSON (optional)</label>
+          <label for="extraText">Additional Text Context (optional)</label>
+          <textarea id="extraText"
+            placeholder="Paste large CSS, HTML snippets, Figma notes, etc. here. This will be sent as ExtraContext with any uploaded files."></textarea>
+        </div>
+
+        <div class="row-single">
+          <label for="extraFiles">Upload Text Files (optional)</label>
           <input id="extraFiles" type="file" multiple
                  accept=".txt,.json,.css,.html,.htm,.md,.csv,.xml,.yml,.yaml" />
           <div id="fileList" class="file-list">No files selected.</div>
         </div>
 
         <div class="row-single">
-          <label>Figma Screenshot / Image (optional)</label>
+          <label>Screenshot / Image (upload or paste)</label>
           <div id="imageDropzone" class="dropzone">
             <span id="imagePlaceholder">
-              Drop PNG/JPEG here, click to choose, or paste (Ctrl+V).
+              Drop PNG/JPEG here, click to choose, or paste from clipboard (Ctrl+V).
             </span>
             <img id="imagePreview" style="display:none;" alt="Screenshot preview" />
+            <!-- Invisible file picker on top -->
             <input id="imageInput" type="file" accept="image/*"
                    style="position:absolute; inset:0; opacity:0; cursor:pointer;" />
           </div>
@@ -244,11 +247,11 @@
         </div>
       </div>
 
-      <!-- Right: Result -->
+      <!-- RIGHT: RESULT -->
       <div class="card">
-        <h2>AI Suggestions (from Flow)</h2>
+        <h2>AI Suggestions (JSON/Text from Flow)</h2>
         <div class="hint">
-          Raw response from your Power Automate Flow (<code>result</code> field).
+          Displays the <code>result</code> field returned by your flow.
         </div>
         <div id="resultBox" class="result-box"></div>
       </div>
@@ -256,35 +259,39 @@
   </div>
 
   <script>
-    // 1. CONFIGURE YOUR FLOW URL HERE
-    const FLOW_URL = "https://ef5a2ed90c82e718bdcb9656af0306.06.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c7945469f1614716bda0b8ea1bb6ee7e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CVzvcNkoO3dm9ZEqIn4sgtJD5s5O1r1yhEEO1iPp6CI"; // <-- paste your HTTP trigger URL
+    // ===== CONFIG: FLOW URL =====
+    const FLOW_URL = "https://ef5a2ed90c82e718bdcb9656af0306.06.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c7945469f1614716bda0b8ea1bb6ee7e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CVzvcNkoO3dm9ZEqIn4sgtJD5s5O1r1yhEEO1iPp6CI"; // <-- paste HTTP POST URL from Power Automate
 
     const designNameEl = document.getElementById("designName");
     const targetPlatformEl = document.getElementById("targetPlatform");
     const designInputEl = document.getElementById("designInput");
+    const extraTextEl = document.getElementById("extraText");
     const extraFilesEl = document.getElementById("extraFiles");
     const fileListEl = document.getElementById("fileList");
+
     const imageInputEl = document.getElementById("imageInput");
     const imageDropzoneEl = document.getElementById("imageDropzone");
     const imagePreviewEl = document.getElementById("imagePreview");
     const imagePlaceholderEl = document.getElementById("imagePlaceholder");
+
     const runBtn = document.getElementById("runBtn");
     const statusText = document.getElementById("statusText");
     const resultBox = document.getElementById("resultBox");
 
-    let imageBase64 = ""; // holds Base64 image without prefix
+    let imageBase64 = ""; // Base64 (no data: prefix)
 
-    // --- Helper: update file-list label ---
+    // ---- File list label ----
     extraFilesEl.addEventListener("change", () => {
       if (!extraFilesEl.files || extraFilesEl.files.length === 0) {
         fileListEl.textContent = "No files selected.";
         return;
       }
-      const names = Array.from(extraFilesEl.files).map(f => `${f.name} (${Math.round(f.size/1024)} KB)`);
+      const names = Array.from(extraFilesEl.files)
+        .map(f => `${f.name} (${Math.round(f.size / 1024)} KB)`);
       fileListEl.textContent = names.join(" • ");
     });
 
-    // --- Image handlers: choose, drag-drop, paste ---
+    // ---- Image load helper ----
     function loadImageFile(file) {
       if (!file) return;
       const reader = new FileReader();
@@ -293,18 +300,20 @@
         imagePreviewEl.src = dataUrl;
         imagePreviewEl.style.display = "block";
         imagePlaceholderEl.style.display = "none";
-        // strip prefix: "data:image/png;base64,"
-        const commaIndex = dataUrl.indexOf(",");
-        imageBase64 = commaIndex >= 0 ? dataUrl.slice(commaIndex + 1) : dataUrl;
+
+        const commaIdx = dataUrl.indexOf(",");
+        imageBase64 = commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl;
       };
       reader.readAsDataURL(file);
     }
 
+    // Choose image
     imageInputEl.addEventListener("change", () => {
       const file = imageInputEl.files && imageInputEl.files[0];
       loadImageFile(file);
     });
 
+    // Drag-drop image
     imageDropzoneEl.addEventListener("dragover", e => {
       e.preventDefault();
       imageDropzoneEl.classList.add("dragover");
@@ -320,7 +329,7 @@
       loadImageFile(file);
     });
 
-    // Paste from clipboard (Ctrl+V) into window
+    // Paste image from clipboard anywhere on page
     window.addEventListener("paste", event => {
       if (!event.clipboardData) return;
       const items = event.clipboardData.items;
@@ -334,13 +343,14 @@
       }
     });
 
-    // --- Read extra files as combined text ---
+    // ---- Read extra files as big text ----
     function readAllFilesAsText(fileList) {
       return new Promise(resolve => {
         if (!fileList || fileList.length === 0) {
           resolve("");
           return;
         }
+
         const files = Array.from(fileList);
         let combined = "";
         let remaining = files.length;
@@ -363,31 +373,40 @@
       });
     }
 
-    // --- Call Flow ---
+    // ---- Call flow ----
     async function callFlow() {
       const designName = (designNameEl.value || "").trim();
       const targetPlatform = (targetPlatformEl.value || "").trim();
       const designInput = (designInputEl.value || "").trim();
+      const extraText = (extraTextEl.value || "").trim();
 
       if (!designInput) {
         statusText.textContent = "Please enter some design input / prompt.";
         statusText.classList.add("error");
         return;
       }
-
       statusText.classList.remove("error");
-      statusText.textContent = "Reading files…";
+      statusText.textContent = "Reading extra files…";
       runBtn.disabled = true;
       resultBox.textContent = "";
 
-      let extraContext = "";
+      let filesText = "";
       try {
-        extraContext = await readAllFilesAsText(extraFilesEl.files);
-      } catch (e) {
-        extraContext = "";
+        filesText = await readAllFilesAsText(extraFilesEl.files);
+      } catch {
+        filesText = "";
       }
 
-      const body = {
+      let extraContext = "";
+      if (extraText && filesText) {
+        extraContext = extraText + "\n\n----- ATTACHED FILES -----\n" + filesText;
+      } else if (extraText) {
+        extraContext = extraText;
+      } else {
+        extraContext = filesText;
+      }
+
+      const payload = {
         designName,
         targetPlatform,
         designInput,
@@ -400,10 +419,8 @@
       try {
         const res = await fetch(FLOW_URL, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(body)
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
         });
 
         if (!res.ok) {
@@ -413,9 +430,11 @@
           resultBox.textContent = text;
         } else {
           const data = await res.json();
-          const resultText = (data && typeof data.result === "string")
-            ? data.result
-            : JSON.stringify(data, null, 2);
+          const resultText =
+            data && typeof data.result === "string"
+              ? data.result
+              : JSON.stringify(data, null, 2);
+
           resultBox.textContent = resultText;
           statusText.textContent = "Done.";
         }
