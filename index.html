@@ -1,90 +1,314 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Design → Power Platform UI Agent (POC)</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    textarea { width: 100%; height: 150px; }
-    pre { background: #f4f4f4; padding: 10px; max-height: 300px; overflow: auto; }
-    .row { margin-bottom: 12px; }
-    label { display: block; font-weight: bold; margin-bottom: 4px; }
-    select, input[type="text"] { width: 100%; padding: 6px; }
-    button { padding: 8px 16px; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h1>Design → Power Apps / Power Pages Suggestions</h1>
-
-  <div class="row">
-    <label for="designName">Design Name</label>
-    <input id="designName" type="text" placeholder="Customer Form – Canvas" />
-  </div>
-
-  <div class="row">
-    <label for="targetPlatform">Target Platform</label>
-    <select id="targetPlatform">
-      <option value="Canvas">Canvas</option>
-      <option value="PowerPages">PowerPages</option>
-      <option value="Both">Both</option>
-    </select>
-  </div>
-
-  <div class="row">
-    <label for="designInput">Design Input (HTML / Figma description / text)</label>
-    <textarea id="designInput" placeholder="Describe the screen or paste HTML here..."></textarea>
-  </div>
-
-  <button id="btnGenerate">Generate Suggestions</button>
-
-  <h2>AI Suggestions (JSON)</h2>
-  <pre id="result"></pre>
-
-  <script>
-    const flowUrl = "https://ef5a2ed90c82e718bdcb9656af0306.06.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c7945469f1614716bda0b8ea1bb6ee7e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CVzvcNkoO3dm9ZEqIn4sgtJD5s5O1r1yhEEO1iPp6CI"; // <-- paste Power Automate URL
-
-    document.getElementById('btnGenerate').addEventListener('click', async () => {
-      const designName = document.getElementById('designName').value;
-      const targetPlatform = document.getElementById('targetPlatform').value;
-      const designInput = document.getElementById('designInput').value;
-      const resultEl = document.getElementById('result');
-
-      if (!designName || !designInput) {
-        alert("Please enter a Design Name and Design Input.");
-        return;
-      }
-
-      resultEl.textContent = "Calling agent...";
-
-      try {
-        const response = await fetch(flowUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            designName: designName,
-            targetPlatform: targetPlatform,
-            designInput: designInput
-          })
-        });
-
-        if (!response.ok) {
-          resultEl.textContent = "Error from flow: " + response.status + " " + response.statusText;
-          return;
+    <meta charset="UTF-8" />
+    <title>Design → Power Apps / Power Pages Suggestions</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: #f5f5f5;
         }
 
-        const data = await response.json();
-        resultEl.textContent = JSON.stringify(data, null, 2);
-      } catch (err) {
-        console.error(err);
-        resultEl.textContent = "Error calling flow: " + err.message;
-      }
-    });
-  </script>
+        h1 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        button {
+            background: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result-area {
+            white-space: pre;
+            font-family: "Consolas", "SFMono-Regular", Menlo, Monaco, monospace;
+            font-size: 12px;
+            background: #fafafa;
+            border-radius: 4px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow: auto;
+            max-height: 400px;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .col {
+            flex: 1 1 300px;
+        }
+
+        .image-zone {
+            border: 2px dashed #9a9a9a;
+            border-radius: 6px;
+            padding: 10px;
+            min-height: 150px;
+            background: #fcfcfc;
+            text-align: center;
+            color: #555;
+            font-size: 13px;
+            position: relative;
+        }
+
+        .image-zone.hover {
+            border-color: #0078d4;
+            background: #eef6ff;
+        }
+
+        .image-preview {
+            margin-top: 8px;
+            max-height: 200px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Design → Power Apps / Power Pages Suggestions</h1>
+
+    <div class="card">
+        <div class="row">
+            <div class="col">
+                <label for="designName">Design Name</label>
+                <input type="text" id="designName" placeholder="e.g., Partner Login / Forgot Password" />
+
+                <label for="targetPlatform">Target Platform</label>
+                <select id="targetPlatform">
+                    <option value="Both">Both</option>
+                    <option value="Canvas">Canvas</option>
+                    <option value="PowerPages">PowerPages</option>
+                </select>
+
+                <label for="designInput">Design Input (HTML / Figma description / text)</label>
+                <textarea id="designInput" placeholder="Describe the screen, paste Figma layer list, or paste HTML here..."></textarea>
+            </div>
+
+            <div class="col">
+                <label>Figma Screenshot / Image (optional)</label>
+
+                <!-- File upload -->
+                <input type="file" id="designImageFile" accept="image/*" />
+
+                <!-- Paste / drag&drop zone -->
+                <div id="imageZone" class="image-zone" contenteditable="true">
+                    <div id="imageZoneText">
+                        Paste an image here (Ctrl+V), or drag &amp; drop a screenshot, or use the file picker above.
+                    </div>
+                    <img id="imagePreview" class="image-preview" style="display:none;" />
+                </div>
+                <div class="hint">
+                    The image will be sent to the AI as Base64 (<code>imageData</code>) along with your text description.
+                </div>
+            </div>
+        </div>
+
+        <br />
+        <button id="generateBtn">Generate Suggestions</button>
+        <span id="status" class="hint"></span>
+    </div>
+
+    <div class="card">
+        <h3>AI Suggestions (JSON)</h3>
+        <div id="result" class="result-area"></div>
+    </div>
+
+    <script>
+        // TODO: Replace this with your actual flow URL
+        const FLOW_URL = "https://ef5a2ed90c82e718bdcb9656af0306.06.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c7945469f1614716bda0b8ea1bb6ee7e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CVzvcNkoO3dm9ZEqIn4sgtJD5s5O1r1yhEEO1iPp6CI";
+
+        const designNameInput = document.getElementById("designName");
+        const targetPlatformSelect = document.getElementById("targetPlatform");
+        const designInputText = document.getElementById("designInput");
+        const generateBtn = document.getElementById("generateBtn");
+        const resultEl = document.getElementById("result");
+        const statusEl = document.getElementById("status");
+
+        const fileInput = document.getElementById("designImageFile");
+        const imageZone = document.getElementById("imageZone");
+        const imagePreview = document.getElementById("imagePreview");
+        const imageZoneText = document.getElementById("imageZoneText");
+
+        // Holds Base64 data URL of the image (if any)
+        let base64Image = null;
+
+        // ---------- File upload ----------
+        fileInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                base64Image = e.target.result; // data:image/..;base64,...
+                showImagePreview(base64Image);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ---------- Paste image into zone ----------
+        imageZone.addEventListener("paste", (event) => {
+            const items = event.clipboardData?.items || [];
+            let handled = false;
+
+            for (let item of items) {
+                if (item.type.indexOf("image") === 0) {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        base64Image = e.target.result;
+                        showImagePreview(base64Image);
+                    };
+                    reader.readAsDataURL(blob);
+                    handled = true;
+                    break;
+                }
+            }
+
+            // Prevent text from being pasted into the div when image is pasted
+            if (handled) {
+                event.preventDefault();
+            }
+        });
+
+        // ---------- Drag & drop image ----------
+        ["dragenter", "dragover"].forEach(evtName => {
+            imageZone.addEventListener(evtName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                imageZone.classList.add("hover");
+            });
+        });
+
+        ["dragleave", "drop"].forEach(evtName => {
+            imageZone.addEventListener(evtName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                imageZone.classList.remove("hover");
+            });
+        });
+
+        imageZone.addEventListener("drop", (e) => {
+            const file = e.dataTransfer.files[0];
+            if (!file || !file.type.startsWith("image/")) return;
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                base64Image = event.target.result;
+                showImagePreview(base64Image);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function showImagePreview(src) {
+            if (src) {
+                imagePreview.src = src;
+                imagePreview.style.display = "block";
+                imageZoneText.style.display = "none";
+            } else {
+                imagePreview.style.display = "none";
+                imageZoneText.style.display = "block";
+            }
+        }
+
+        // ---------- Generate Suggestions ----------
+        generateBtn.addEventListener("click", async () => {
+            const designName = designNameInput.value.trim();
+            const targetPlatform = targetPlatformSelect.value;
+            const designInput = designInputText.value.trim();
+
+            resultEl.textContent = "";
+            statusEl.textContent = "";
+
+            if (!designName && !designInput && !base64Image) {
+                alert("Please enter a design name, description, or image.");
+                return;
+            }
+
+            const payload = {
+                designName,
+                targetPlatform,
+                designInput
+            };
+
+            // include image only if present
+            if (base64Image) {
+                payload.imageData = base64Image;
+            }
+
+            generateBtn.disabled = true;
+            statusEl.textContent = "Calling flow…";
+
+            try {
+                const response = await fetch(FLOW_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                }
+
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                statusEl.textContent = "Done.";
+            } catch (err) {
+                console.error(err);
+                statusEl.textContent = "Error calling flow.";
+                resultEl.textContent = String(err);
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
-
-
-
-
