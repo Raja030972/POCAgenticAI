@@ -1,467 +1,197 @@
-<!DOCTYPE html>
+<!-- ...existing code... -->
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Design → Power Apps / Power Pages Suggestions</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Responsive Power Pages Sample</title>
+  <meta name="description" content="Mobile-first responsive sample page suitable for Power Pages." />
   <style>
-    :root {
-      --bg: #f5f7fb;
-      --card: #ffffff;
-      --accent: #2563eb;
-      --accent-soft: #dbeafe;
-      --border: #e5e7eb;
-      --text-main: #111827;
-      --text-sub: #4b5563;
-      --error: #b91c1c;
-      --radius: 10px;
+    :root{
+      --accent:#0b5fff; --muted:#6b7280; --bg:#f7f8fb; --card:#fff;
+      --radius:12px; --max-width:1100px; --gap:1rem;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      --site-padding:1rem;
     }
-    * { box-sizing: border-box; }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      background:var(--bg); color:#0f1724; -webkit-font-smoothing:antialiased;
+      padding:var(--site-padding); display:flex; justify-content:center;
+    }
+    .container{width:100%;max-width:var(--max-width)}
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:var(--gap);
+      margin-bottom:1rem;
+    }
+    .brand{display:flex;gap:.75rem;align-items:center;text-decoration:none;color:inherit}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#6e8cff);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    nav.primary{display:flex;gap:.6rem;align-items:center}
+    .nav-link{color:var(--muted);text-decoration:none;padding:.5rem;border-radius:8px;font-size:.95rem}
+    .nav-link:hover{color:var(--accent);background:rgba(11,95,255,0.06)}
+    .menu-toggle{display:none;background:transparent;border:0;font-size:1.25rem;cursor:pointer}
 
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text-main);
-    }
-    .page {
-      max-width: 1320px;
-      margin: 0 auto;
-      padding: 24px 16px 40px;
-    }
-    h1 {
-      font-size: 1.6rem;
-      margin: 0 0 6px;
-    }
-    .subtitle {
-      color: var(--text-sub);
-      font-size: 0.9rem;
-      margin-bottom: 18px;
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-      gap: 18px;
-    }
-    @media (max-width: 900px) {
-      .layout { grid-template-columns: minmax(0, 1fr); }
+    main.grid{
+      display:grid; gap:1rem;
+      grid-template-columns:1fr; /* mobile-first: single column */
+      align-items:start;
     }
 
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      padding: 16px 18px 18px;
-      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.04);
+    .hero{
+      background:linear-gradient(180deg,transparent,rgba(0,0,0,0.02));
+      padding:1.25rem;border-radius:var(--radius);
     }
-    .card h2 {
-      font-size: 1rem;
-      margin: 0 0 4px;
-    }
-    .card .hint {
-      font-size: 0.8rem;
-      color: var(--text-sub);
-      margin-bottom: 10px;
+    .title{font-size:1.3rem;margin:0 0 .35rem 0;font-weight:700}
+    .subtitle{color:var(--muted);margin:0 0 1rem 0;font-size:.95rem}
+
+    .card-grid{display:grid;gap:.9rem;grid-template-columns:1fr}
+    .card{background:var(--card);padding:1rem;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,36,0.06)}
+    .features{display:grid;gap:.7rem}
+    .feature{display:flex;gap:.75rem;align-items:flex-start}
+    .icon{min-width:44px;height:44px;border-radius:10px;background:rgba(11,95,255,0.08);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+
+    form.contact{display:flex;flex-direction:column;gap:.6rem}
+    label{font-size:.88rem;color:var(--muted)}
+    input,textarea,select{width:100%;padding:.6rem .7rem;border-radius:8px;border:1px solid #e6e9ef;background:#fff;font-size:.95rem}
+    textarea{min-height:110px;resize:vertical}
+    .actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.4rem}
+    .btn{border:0;padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--accent);color:#fff}
+    .btn.ghost{background:transparent;border:1px solid rgba(11,95,255,0.12);color:var(--accent)}
+
+    footer{text-align:center;color:var(--muted);font-size:.88rem;margin-top:.5rem;padding:.25rem}
+
+    /* Tablet: two-column main (content + aside) and two-column cards */
+    @media (min-width:600px){
+      .menu-toggle{display:none}
+      nav.primary{display:flex}
+      main.grid{grid-template-columns: 1fr 340px;} /* content | aside */
+      .card-grid{grid-template-columns:repeat(2,1fr)}
+      .title{font-size:1.5rem}
     }
 
-    label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      display: block;
-      margin-bottom: 4px;
-      color: var(--text-sub);
-    }
-    input[type="text"],
-    select,
-    textarea {
-      width: 100%;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      padding: 8px 9px;
-      font-size: 0.9rem;
-      font-family: inherit;
-      outline: none;
-      background: #ffffff;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    textarea {
-      min-height: 120px;
-      resize: vertical;
-      white-space: pre-wrap;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent-soft);
+    /* Desktop: wider layout and more columns */
+    @media (min-width:1024px){
+      main.grid{grid-template-columns: 1fr 380px}
+      .card-grid{grid-template-columns:repeat(3,1fr)}
+      .title{font-size:1.75rem}
     }
 
-    .row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .row-single {
-      margin-bottom: 10px;
-    }
-
-    .dropzone {
-      border-radius: 10px;
-      border: 1px dashed #9ca3af;
-      padding: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 140px;
-      position: relative;
-      background: #f9fafb;
-      text-align: center;
-      font-size: 0.8rem;
-      color: var(--text-sub);
-    }
-    .dropzone.dragover {
-      border-color: var(--accent);
-      background: var(--accent-soft);
-      color: var(--text-main);
-    }
-    .dropzone img {
-      max-width: 100%;
-      max-height: 220px;
-      border-radius: 8px;
-      object-fit: contain;
-    }
-    .file-list {
-      font-size: 0.8rem;
-      margin-top: 6px;
-      color: var(--text-sub);
-    }
-
-    button.primary {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 999px;
-      padding: 8px 16px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    button.primary:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-
-    .status {
-      font-size: 0.8rem;
-      margin-left: 8px;
-      color: var(--text-sub);
-    }
-    .status.error {
-      color: var(--error);
-    }
-
-    .result-box {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 0.85rem;
-      background: #0b1120;
-      color: #e5e7eb;
-      border-radius: 8px;
-      padding: 10px;
-      white-space: pre-wrap;
-      overflow: auto;
-      max-height: 520px;
+    /* Small screens: show toggle, hide nav */
+    @media (max-width:599px){
+      nav.primary{display:none}
+      .menu-toggle{display:inline-flex}
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <h1>Design → Power Apps / Power Pages Suggestions</h1>
-    <div class="subtitle">
-      Type your prompt, paste Figma / CSS / HTML as text, attach text files, and upload or paste a screenshot.
-      The response comes from your Power Automate flow.
-    </div>
-
-    <div class="layout">
-      <!-- LEFT: INPUT -->
-      <div class="card">
-        <h2>Design Input</h2>
-        <div class="hint">
-          This is the main prompt the AI will follow.
+  <div class="container" role="document">
+    <header role="banner">
+      <a class="brand" href="#" aria-label="Home">
+        <span class="logo" aria-hidden="true">PP</span>
+        <div>
+          <div style="font-weight:700">Power Pages Demo</div>
+          <div style="font-size:.8rem;color:var(--muted)">Responsive: mobile · tablet · desktop</div>
         </div>
+      </a>
 
-        <div class="row">
-          <div>
-            <label for="designName">Design Name</label>
-            <input id="designName" type="text" placeholder="e.g. Mobile Responsive Design" />
+      <nav class="primary" role="navigation" aria-label="Main">
+        <a class="nav-link" href="#features">Features</a>
+        <a class="nav-link" href="#contact">Contact</a>
+        <a class="nav-link" href="#docs">Docs</a>
+      </nav>
+
+      <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="mobileMenu">☰</button>
+    </header>
+
+    <main class="grid" role="main" aria-labelledby="heroTitle">
+      <!-- Primary column -->
+      <section>
+        <article class="hero" aria-labelledby="heroTitle">
+          <h1 id="heroTitle" class="title">Clean, adaptive layout for Power Pages</h1>
+          <p class="subtitle">Mobile-first template. Layout automatically adapts: single column on phones, two-column on tablets, expanded grid on desktop.</p>
+
+          <div id="features" class="card-grid" aria-live="polite">
+            <div class="card">
+              <h3 style="margin-top:0">Accessible & lightweight</h3>
+              <div class="features">
+                <div class="feature"><div class="icon" aria-hidden="true">A</div><div><strong>Mobile-first</strong><div style="color:var(--muted)">Designed for small screens first, scales up gracefully.</div></div></div>
+                <div class="feature"><div class="icon" aria-hidden="true">C</div><div><strong>Compatible</strong><div style="color:var(--muted)">No external libs — safe for Power Pages web files.</div></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 style="margin-top:0">Flexible grid</h3>
+              <p style="color:var(--muted);margin:0">Cards reflow with breakpoints: 1 column (mobile), 2 (tablet), 3 (desktop).</p>
+            </div>
+
+            <div class="card">
+              <h3 style="margin-top:0">Ready to extend</h3>
+              <p style="color:var(--muted);margin:0">Drop in portal forms or use Liquid to integrate with Dataverse / Web API.</p>
+            </div>
           </div>
-          <div>
-            <label for="targetPlatform">Target Platform</label>
-            <select id="targetPlatform">
-              <option value="">(Not specified)</option>
-              <option>Canvas</option>
-              <option>PowerPages</option>
-              <option>Both</option>
-            </select>
+        </article>
+      </section>
+
+      <!-- Aside column (will flow below main on small screens) -->
+      <aside class="card" id="contact" aria-labelledby="contactTitle">
+        <h3 id="contactTitle" style="margin-top:0">Contact</h3>
+
+        <!-- Replace with your Power Pages Portal Form or Liquid-managed form action -->
+        <form class="contact" method="post" action="#" onsubmit="handleSubmit(event)" aria-describedby="formStatus">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" required />
+
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required />
+
+          <label for="topic">Topic</label>
+          <select id="topic" name="topic">
+            <option>General</option>
+            <option>Sales</option>
+            <option>Support</option>
+          </select>
+
+          <label for="message">Message</label>
+          <textarea id="message" name="message"></textarea>
+
+          <div class="actions">
+            <button type="button" class="btn ghost" onclick="clearForm()">Clear</button>
+            <button type="submit" class="btn primary">Send</button>
           </div>
-        </div>
+          <div id="formStatus" style="font-size:.88rem;color:var(--muted);margin-top:.5rem" aria-live="polite"></div>
+        </form>
+      </aside>
+    </main>
 
-        <div class="row-single">
-          <label for="designInput">Design Input / Prompt (HTML / Figma / text)</label>
-          <textarea id="designInput"
-            placeholder="Example: Please give me a step-by-step implementation plan to make this Québec landing page mobile responsive in Power Pages..."></textarea>
-        </div>
-
-        <div class="row-single">
-          <label for="extraText">Additional Text Context (optional)</label>
-          <textarea id="extraText"
-            placeholder="Paste large CSS, HTML snippets, Figma notes, etc. here. This will be sent as ExtraContext with any uploaded files."></textarea>
-        </div>
-
-        <div class="row-single">
-          <label for="extraFiles">Upload Text Files (optional)</label>
-          <input id="extraFiles" type="file" multiple
-                 accept=".txt,.json,.css,.html,.htm,.md,.csv,.xml,.yml,.yaml" />
-          <div id="fileList" class="file-list">No files selected.</div>
-        </div>
-
-        <div class="row-single">
-          <label>Screenshot / Image (upload or paste)</label>
-          <div id="imageDropzone" class="dropzone">
-            <span id="imagePlaceholder">
-              Drop PNG/JPEG here, click to choose, or paste from clipboard (Ctrl+V).
-            </span>
-            <img id="imagePreview" style="display:none;" alt="Screenshot preview" />
-            <!-- Invisible file picker on top -->
-            <input id="imageInput" type="file" accept="image/*"
-                   style="position:absolute; inset:0; opacity:0; cursor:pointer;" />
-          </div>
-        </div>
-
-        <div style="margin-top: 10px; display:flex; align-items:center;">
-          <button class="primary" id="runBtn">
-            <span>Generate Suggestions</span>
-          </button>
-          <span id="statusText" class="status"></span>
-        </div>
-      </div>
-
-      <!-- RIGHT: RESULT -->
-      <div class="card">
-        <h2>AI Suggestions (JSON/Text from Flow)</h2>
-        <div class="hint">
-          Displays the <code>result</code> field returned by your flow.
-        </div>
-        <div id="resultBox" class="result-box"></div>
-      </div>
-    </div>
+    <footer role="contentinfo">© <span id="year"></span> Power Pages Demo</footer>
   </div>
 
   <script>
-    // ===== CONFIG: FLOW URL =====
-    const FLOW_URL = "https://ef5a2ed90c82e718bdcb9656af0306.06.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c7945469f1614716bda0b8ea1bb6ee7e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CVzvcNkoO3dm9ZEqIn4sgtJD5s5O1r1yhEEO1iPp6CI"; // <-- paste HTTP POST URL from Power Automate
-
-    const designNameEl = document.getElementById("designName");
-    const targetPlatformEl = document.getElementById("targetPlatform");
-    const designInputEl = document.getElementById("designInput");
-    const extraTextEl = document.getElementById("extraText");
-    const extraFilesEl = document.getElementById("extraFiles");
-    const fileListEl = document.getElementById("fileList");
-
-    const imageInputEl = document.getElementById("imageInput");
-    const imageDropzoneEl = document.getElementById("imageDropzone");
-    const imagePreviewEl = document.getElementById("imagePreview");
-    const imagePlaceholderEl = document.getElementById("imagePlaceholder");
-
-    const runBtn = document.getElementById("runBtn");
-    const statusText = document.getElementById("statusText");
-    const resultBox = document.getElementById("resultBox");
-
-    let imageBase64 = ""; // Base64 (no data: prefix)
-
-    // ---- File list label ----
-    extraFilesEl.addEventListener("change", () => {
-      if (!extraFilesEl.files || extraFilesEl.files.length === 0) {
-        fileListEl.textContent = "No files selected.";
-        return;
-      }
-      const names = Array.from(extraFilesEl.files)
-        .map(f => `${f.name} (${Math.round(f.size / 1024)} KB)`);
-      fileListEl.textContent = names.join(" • ");
-    });
-
-    // ---- Image load helper ----
-    function loadImageFile(file) {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        const dataUrl = e.target.result;
-        imagePreviewEl.src = dataUrl;
-        imagePreviewEl.style.display = "block";
-        imagePlaceholderEl.style.display = "none";
-
-        const commaIdx = dataUrl.indexOf(",");
-        imageBase64 = commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // Choose image
-    imageInputEl.addEventListener("change", () => {
-      const file = imageInputEl.files && imageInputEl.files[0];
-      loadImageFile(file);
-    });
-
-    // Drag-drop image
-    imageDropzoneEl.addEventListener("dragover", e => {
-      e.preventDefault();
-      imageDropzoneEl.classList.add("dragover");
-    });
-    imageDropzoneEl.addEventListener("dragleave", e => {
-      e.preventDefault();
-      imageDropzoneEl.classList.remove("dragover");
-    });
-    imageDropzoneEl.addEventListener("drop", e => {
-      e.preventDefault();
-      imageDropzoneEl.classList.remove("dragover");
-      const file = e.dataTransfer.files && e.dataTransfer.files[0];
-      loadImageFile(file);
-    });
-
-    // Paste image from clipboard anywhere on page
-    window.addEventListener("paste", event => {
-      if (!event.clipboardData) return;
-      const items = event.clipboardData.items;
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.type.startsWith("image/")) {
-          const file = item.getAsFile();
-          loadImageFile(file);
-          break;
-        }
-      }
-    });
-
-    // ---- Read extra files as big text ----
-    function readAllFilesAsText(fileList) {
-      return new Promise(resolve => {
-        if (!fileList || fileList.length === 0) {
-          resolve("");
-          return;
-        }
-
-        const files = Array.from(fileList);
-        let combined = "";
-        let remaining = files.length;
-
-        files.forEach(file => {
-          const reader = new FileReader();
-          reader.onload = e => {
-            combined += `\n\n----- FILE: ${file.name} (${file.type || "text"}) -----\n`;
-            combined += e.target.result;
-            remaining -= 1;
-            if (remaining === 0) resolve(combined);
-          };
-          reader.onerror = () => {
-            combined += `\n\n----- FILE: ${file.name} (ERROR READING) -----\n`;
-            remaining -= 1;
-            if (remaining === 0) resolve(combined);
-          };
-          reader.readAsText(file);
-        });
+    (function(){
+      const menuToggle = document.getElementById('menuToggle');
+      const nav = document.querySelector('nav.primary');
+      menuToggle && menuToggle.addEventListener('click', () => {
+        const expanded = menuToggle.getAttribute('aria-expanded') === 'true';
+        menuToggle.setAttribute('aria-expanded', String(!expanded));
+        nav.style.display = (nav.style.display === 'flex') ? 'none' : 'flex';
       });
-    }
 
-    // ---- Call flow ----
-    async function callFlow() {
-      const designName = (designNameEl.value || "").trim();
-      const targetPlatform = (targetPlatformEl.value || "").trim();
-      const designInput = (designInputEl.value || "").trim();
-      const extraText = (extraTextEl.value || "").trim();
+      window.handleSubmit = (e) => {
+        e.preventDefault();
+        const st = document.getElementById('formStatus');
+        st.textContent = 'Sending…';
+        setTimeout(()=> st.textContent = 'Demo message sent — replace with portal form or API.', 700);
+      };
 
-      if (!designInput) {
-        statusText.textContent = "Please enter some design input / prompt.";
-        statusText.classList.add("error");
-        return;
-      }
-      statusText.classList.remove("error");
-      statusText.textContent = "Reading extra files…";
-      runBtn.disabled = true;
-      resultBox.textContent = "";
+      window.clearForm = () => {
+        document.querySelectorAll('.contact input, .contact textarea, .contact select').forEach(el => el.value = '');
+        document.getElementById('formStatus').textContent = '';
+      };
 
-      let filesText = "";
-      try {
-        filesText = await readAllFilesAsText(extraFilesEl.files);
-      } catch {
-        filesText = "";
-      }
-
-      let extraContext = "";
-      if (extraText && filesText) {
-        extraContext = extraText + "\n\n----- ATTACHED FILES -----\n" + filesText;
-      } else if (extraText) {
-        extraContext = extraText;
-      } else {
-        extraContext = filesText;
-      }
-
-     const payload = {
-    designName: designNameInput.value,
-    targetPlatform: platformSelect.value,
-    designInput: mainPrompt.value,
-    extraContext: additionalContext.value || "",
-    fileText: uploadedTextFileContent || "",
-    imageData: uploadedImageBase64 || ""
-};
-
-const response = await fetch(FLOW_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-});
-
-const json = await response.json();
-document.getElementById("aiOutput").innerText = json.result;
-      
-      statusText.textContent = "Calling flow…";
-
-      try {
-        const res = await fetch(FLOW_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          statusText.textContent = `Flow error: ${res.status} ${res.statusText}`;
-          statusText.classList.add("error");
-          resultBox.textContent = text;
-        } else {
-          const data = await res.json();
-          const resultText =
-            data && typeof data.result === "string"
-              ? data.result
-              : JSON.stringify(data, null, 2);
-
-          resultBox.textContent = resultText;
-          statusText.textContent = "Done.";
-        }
-      } catch (err) {
-        console.error(err);
-        statusText.textContent = "Error calling flow. See console.";
-        statusText.classList.add("error");
-        resultBox.textContent = String(err);
-      } finally {
-        runBtn.disabled = false;
-      }
-    }
-
-    runBtn.addEventListener("click", () => {
-      callFlow();
-    });
+      document.getElementById('year').textContent = new Date().getFullYear();
+    })();
   </script>
 </body>
 </html>
-
+<!-- ...existing code... -->
