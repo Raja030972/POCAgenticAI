@@ -20,6 +20,9 @@
     
     <!-- JS PDF Library for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- HTML2Canvas for rendering formatted HTML to PDF (NEW DEPENDENCY) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> 
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
@@ -47,6 +50,9 @@
         }
 
         /* Markdown Styles */
+        /* IMPORTANT: Make sure the prose container has a light background color 
+           when rendering to HTML/Canvas for PDF, otherwise it will print black text on black background. 
+           We will handle this override in the PDF function's temporary container. */
         .prose pre {
             background-color: #000 !important;
             border-radius: 0.5rem;
@@ -116,6 +122,34 @@
         }
         .group:hover .message-actions {
             opacity: 1;
+        }
+
+        /* Temporary PDF container styles for contrast */
+        .pdf-temp-container {
+            background-color: white !important;
+            color: black !important;
+            padding: 30px;
+            width: 794px; /* A4 width in pixels at 96 DPI */
+        }
+        .pdf-temp-container .prose {
+             color: black !important;
+        }
+        .pdf-temp-container .prose-invert {
+            filter: invert(0); /* Undo inverse styles for printing */
+            color: black !important;
+        }
+        .pdf-temp-container .prose pre {
+            background-color: #f5f5f5 !important;
+            color: #333 !important;
+            border: 1px solid #ddd;
+        }
+        .pdf-temp-container .prose h1,
+        .pdf-temp-container .prose h2,
+        .pdf-temp-container .prose h3 {
+            color: #095797 !important; /* Use a dark color for headers */
+        }
+        .pdf-temp-container .prose code {
+            color: #000 !important;
         }
     </style>
 </head>
@@ -315,7 +349,7 @@
         }
 
 
-        // --- History & Persistence Management (UNCHANGED) ---
+        // --- History & Persistence Management ---
 
         function loadSessionList() {
             try {
@@ -339,7 +373,7 @@
             const sessionIndex = allSessions.findIndex(s => s.id === activeSessionId);
             const sessionData = {
                 id: activeSessionId,
-                title: allSessions[sessionIndex].title,
+                title: allSessions[sessionIndex]?.title,
                 lastActive: new Date().toISOString(),
                 history: chatHistory 
             };
@@ -484,7 +518,7 @@
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
 
-        // --- Initialization (UNCHANGED) ---
+        // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
             updateKeyStatus();
 
@@ -539,7 +573,7 @@
             }
         });
 
-        // --- Settings Functions (UNCHANGED) ---
+        // --- Settings Functions ---
         function openSettings() {
             document.getElementById('api-key-input').value = apiKey;
             document.getElementById('settings-modal').classList.remove('hidden');
@@ -571,11 +605,10 @@
                 statusEl.classList.remove('text-yellow-500');
             } else {
                 statusEl.innerHTML = '⚠️ API Key not set. Click to configure.';
-                statusEl.classList.add('text-yellow-500');
             }
         }
         
-        // --- UI & Input Functions (UNCHANGED) ---
+        // --- UI & Input Functions ---
 
         function toggleMobileSidebar() {
              const sidebar = document.getElementById('sidebar');
@@ -622,7 +655,7 @@
             }
         }
 
-        // --- File Handling (UNCHANGED) ---
+        // --- File Handling ---
 
         function handleFileSelect(event) {
             const files = event.target.files;
@@ -682,7 +715,7 @@
             updateFilePreview();
         }
         
-        // --- Download Dropdown Handlers (UPDATED) ---
+        // --- Download Dropdown Handlers ---
 
         function toggleDownloadDropdown(button) {
             const actionsDiv = button.closest('.message-actions');
@@ -702,7 +735,7 @@
             if (dropdown) dropdown.classList.add('hidden');
         }
 
-        // --- Core Logic (UPDATED) ---
+        // --- Core Logic ---
 
         async function sendMessage() {
             if (!apiKey) {
@@ -818,15 +851,20 @@
             }
 
             let contentHTML = '';
+            let parsedHtmlContent = '';
             
             if (role === 'model') {
-                contentHTML = marked.parse(text);
+                parsedHtmlContent = marked.parse(text);
+                contentHTML = parsedHtmlContent;
             } else if (role === 'error') {
                 contentHTML = `<span class="text-red-400 font-medium">${text}</span>`;
             } else {
                 const escapedText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
                 contentHTML = `<p>${escapedText}</p>`;
             }
+            
+            div.dataset.renderedContent = role === 'model' ? encodeURIComponent(parsedHtmlContent) : '';
+
 
             // --- Download and Copy Action Menu (Enhanced with Presentation PDF) ---
             let actionsMenu = '';
@@ -843,10 +881,10 @@
                         <div class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#202123] ring-1 ring-white/10 focus:outline-none hidden z-10" id="download-dropdown">
                             <div class="py-1">
                                 <button onclick="downloadRawContent(this, 'txt');" class="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-[#343541]">
-                                    Download as Text (.txt)
+                                    Download as Raw Text (.txt)
                                 </button>
-                                <button onclick="downloadRawContent(this, 'pdf');" class="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-[#343541]">
-                                    Download as Document (.pdf)
+                                <button onclick="downloadFormattedContent(this);" class="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-[#343541]">
+                                    Download as Formatted PDF
                                 </button>
                                 <hr class="border-gray-700 my-1">
                                 <button onclick="downloadRawContent(this, 'presentation');" class="block w-full text-left px-4 py-2 text-sm text-teal-300 font-medium hover:bg-[#343541]">
@@ -880,7 +918,7 @@
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
 
-        // --- PDF Presentation Logic (NEW) ---
+        // --- PDF Presentation Logic (UNCHANGED) ---
 
         function parseSlidesFromMarkdown(rawText) {
             const lines = rawText.split('\n');
@@ -1023,7 +1061,88 @@
         }
 
 
-        // --- Download and Copy Logic (UPDATED to support 'presentation') ---
+        // --- Download and Copy Logic (UPDATED) ---
+        
+        // New function to handle the HTML -> PDF conversion
+        function downloadFormattedContent(btnElement) {
+            hideDownloadDropdown(btnElement);
+            const messageDiv = btnElement.closest('.group');
+            if (!messageDiv || !messageDiv.dataset.renderedContent) return;
+
+            const renderedHTML = decodeURIComponent(messageDiv.dataset.renderedContent);
+            const fileName = `ai_formatted_response_${new Date().toISOString().slice(0, 10)}.pdf`;
+            
+            // Create a temporary, hidden container for rendering the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = renderedHTML;
+            tempDiv.className = 'pdf-temp-container'; // Apply styling overrides for contrast
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px'; 
+            document.body.appendChild(tempDiv);
+
+            // Use html2canvas to render the hidden container to a canvas
+            html2canvas(tempDiv, {
+                scale: 2, // Increase scale for better resolution
+                logging: false,
+                useCORS: true,
+                backgroundColor: '#ffffff' // Ensure white background
+            }).then(canvas => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'px',
+                    format: 'a4'
+                });
+                
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const pdfWidth = doc.internal.pageSize.getWidth();
+                const pdfHeight = doc.internal.pageSize.getHeight();
+                
+                // Calculate scale to fit canvas width to PDF width (with margins)
+                const margin = 20;
+                const scale = (pdfWidth - 2 * margin) / canvasWidth;
+                let finalHeight = canvasHeight * scale;
+                
+                let position = margin;
+                
+                // If the content is longer than one page, split it
+                let heightLeft = finalHeight;
+                
+                while (heightLeft > 0) {
+                    if (position !== margin) {
+                        doc.addPage();
+                        position = margin;
+                    }
+                    
+                    const clipHeight = Math.min(heightLeft, pdfHeight - 2 * margin);
+                    
+                    doc.addImage(
+                        canvas.toDataURL('image/jpeg', 1.0), 
+                        'JPEG', 
+                        margin, 
+                        position, 
+                        pdfWidth - 2 * margin, 
+                        finalHeight, 
+                        undefined, 
+                        'FAST',
+                        0,
+                        -(finalHeight - heightLeft) / scale 
+                    );
+
+                    heightLeft -= clipHeight;
+                    position += clipHeight; // Prepare for next page if needed
+                }
+
+                doc.save(fileName);
+                document.body.removeChild(tempDiv);
+            }).catch(error => {
+                console.error("Error generating formatted PDF:", error);
+                document.body.removeChild(tempDiv);
+                alert("Error generating formatted PDF. Try the raw text download.");
+            });
+        }
+
 
         function downloadRawContent(btnElement, format) {
             hideDownloadDropdown(btnElement); 
@@ -1047,104 +1166,8 @@
             } else if (format === 'presentation') {
                 generatePresentationPDF(rawText);
 
-            } else if (format === 'pdf') {
-                // Original standard document PDF generator (uses the old logic)
-                if (typeof window.jspdf === 'undefined') {
-                    alert("PDF library not loaded. Cannot generate PDF.");
-                    return;
-                }
-                
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                const MARGIN = 15;
-                const MAX_WIDTH = 180; 
-                const DEFAULT_FONT_SIZE = 11;
-                const LINE_HEIGHT = 5; 
-                const PAGE_HEIGHT = doc.internal.pageSize.height;
-
-                let y = MARGIN;
-                let isCodeBlock = false;
-                let listCounter = 0;
-
-                doc.setFontSize(DEFAULT_FONT_SIZE);
-                doc.setTextColor('#000000'); // Ensure black text for default PDF mode
-
-                const lines = rawText.split('\n');
-
-                const addText = (text, x, size, style, color) => {
-                    if (y + LINE_HEIGHT > PAGE_HEIGHT - MARGIN) {
-                        doc.addPage();
-                        y = MARGIN;
-                    }
-
-                    doc.setFont(doc.getFont().fontName, style || 'normal');
-                    doc.setFontSize(size || DEFAULT_FONT_SIZE);
-                    doc.setTextColor(color || '#000000');
-                    
-                    const splitLines = doc.splitTextToSize(text, MAX_WIDTH - x);
-
-                    splitLines.forEach(line => {
-                        if (y + LINE_HEIGHT > PAGE_HEIGHT - MARGIN) {
-                            doc.addPage();
-                            y = MARGIN;
-                        }
-                        doc.text(line, MARGIN + x, y);
-                        y += LINE_HEIGHT;
-                    });
-                };
-                
-                const addVerticalSpace = (height = LINE_HEIGHT / 2) => {
-                    y += height;
-                    if (y > PAGE_HEIGHT - MARGIN) {
-                        doc.addPage();
-                        y = MARGIN;
-                    }
-                }
-
-                // Simplified parsing for standard PDF (original logic retained)
-                lines.forEach(line => {
-                    line = line.trimEnd();
-                    if (line.startsWith('```')) {
-                        isCodeBlock = !isCodeBlock;
-                        if (isCodeBlock) {
-                            addVerticalSpace(LINE_HEIGHT / 2);
-                            doc.setFont('courier', 'normal');
-                            doc.setFontSize(9);
-                            doc.setTextColor('#333333');
-                        } else {
-                            doc.setFont('helvetica', 'normal');
-                            doc.setFontSize(DEFAULT_FONT_SIZE);
-                            doc.setTextColor('#000000');
-                            addVerticalSpace(LINE_HEIGHT * 1.5);
-                        }
-                        return;
-                    }
-                    if (isCodeBlock) {
-                        addText(line, 5, 9, 'normal', '#333333');
-                        return;
-                    }
-                    if (line.length === 0) {
-                        listCounter = 0;
-                        addVerticalSpace(LINE_HEIGHT / 2);
-                        return;
-                    }
-                    // Handle markdown headers, lists, etc.
-                    // (Original logic continued...)
-                    if (line.startsWith('###')) { /* ... */ } 
-                    else if (line.startsWith('##')) { /* ... */ } 
-                    else if (line.startsWith('#')) { /* ... */ }
-                    else if (line.match(/^(\*|-)\s+(.*)/)) { /* ... */ }
-                    else if (line.match(/^(\d+)\.\s+(.*)/)) { /* ... */ }
-                    else {
-                         const cleanedLine = line.replace(/\*\*(.*?)\*\*/g, (match, p1) => p1.toUpperCase());
-                         addText(cleanedLine, 0, DEFAULT_FONT_SIZE);
-                         addVerticalSpace(LINE_HEIGHT / 4);
-                    }
-                });
-                
-                doc.save(`${fileName}.pdf`);
             }
+            // Note: The old 'pdf' format is now handled by downloadFormattedContent()
         }
 
         function copyRawContent(btnElement) {
