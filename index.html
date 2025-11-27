@@ -21,142 +21,245 @@
     <!-- JS PDF Library for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <!-- HTML2Canvas for rendering formatted HTML to PDF (NEW DEPENDENCY) -->
+    <!-- HTML2Canvas for rendering formatted HTML to PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> 
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         
+        /* --- Dark Mode Defaults --- */
         body {
             font-family: 'Inter', sans-serif;
-             #FFFFFF; /* White Background */
-            color: #333333; /* Dark Text */
+            background-color: #343541; /* OpenAI Dark Grey */
+            color: #ECECF1;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #343541;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #565869;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #acacbe;
+        #sidebar {
+            background-color: #202123;
         }
 
-        /* Markdown Styles */
-        /* IMPORTANT: Make sure the prose container has a light background color 
-           when rendering to HTML/Canvas for PDF, otherwise it will print black text on black background. 
-           We will handle this override in the PDF function's temporary container. */
-       .prose pre {
-            background-color: #f5f5f5 !important; /* Light background for code blocks */
+        .message-row-user {
+            background-color: #343541;
+            border-color: rgba(0,0,0,0.1);
+        }
+        .message-row-model {
+            background-color: #444654;
+            border-color: rgba(0,0,0,0.1);
+        }
+        
+        /* Input Area & Glass Panel */
+        .glass-panel {
+            background: rgba(52, 53, 65, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #ffffff1a;
+        }
+        #user-input {
+            background-color: transparent;
+        }
+        .input-wrapper {
+            background-color: #40414F;
+        }
+
+        /* Loading indicator */
+        #loading-indicator {
+            background-color: #444654;
+            color: #ECECF1;
+        }
+        
+        /* Markdown Styles (Dark) */
+        .prose pre {
+            background-color: #000 !important;
             border-radius: 0.5rem;
             margin-top: 1rem;
             margin-bottom: 1rem;
-            position: relative;
         }
         .prose code {
             color: #e2e8f0;
-            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-        }
-        .prose p {
-            margin-bottom: 1rem;
-            line-height: 1.7;
-        }
-        .prose ul {
-            list-style-type: disc;
-            padding-left: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        .prose ol {
-            list-style-type: decimal;
-            padding-left: 1.5rem;
-            margin-bottom: 1rem;
         }
         .prose h1, .prose h2, .prose h3 {
             color: #fff;
-            font-weight: 600;
-            margin-top: 1.5rem;
-            margin-bottom: 0.5rem;
         }
-        .prose a {
-            color: #10a37f;
-            text-decoration: underline;
+
+        /* --- Light Mode Overrides --- */
+        body.light-mode {
+            background-color: #f7f7f7 !important;
+            color: #1c1c1c !important;
+        }
+
+        body.light-mode #sidebar {
+            background-color: #ffffff !important;
+            border-right: 1px solid #e5e5e5;
         }
         
-        /* Loading Animation */
-        .typing-dot {
-            width: 6px;
-            height: 6px;
-            background-color: #9CA3AF;
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out both;
+        body.light-mode #sidebar button {
+            color: #1c1c1c !important;
+            border-color: #e5e5e5 !important;
         }
+        body.light-mode #sidebar button:hover {
+            background-color: #f0f0f0 !important;
+        }
+        body.light-mode #sidebar .text-gray-500 {
+            color: #888 !important;
+        }
+        
+        /* Message Rows */
+        body.light-mode .message-row-user {
+            background-color: #ffffff !important;
+            border-color: #eee !important;
+            color: #1c1c1c !important;
+        }
+        body.light-mode .message-row-model {
+            background-color: #f0f0f0 !important;
+            border-color: #eee !important;
+            color: #1c1c1c !important;
+        }
+        
+        /* Input Area & Glass Panel (Light) */
+        body.light-mode .glass-panel {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border-top: 1px solid #e5e5e5 !important;
+        }
+        body.light-mode .input-wrapper {
+            background-color: #ffffff !important;
+            border: 1px solid #ccc !important;
+        }
+        body.light-mode #user-input {
+            color: #1c1c1c !important;
+            placeholder-color: #888 !important;
+        }
+        body.light-mode .text-gray-400 {
+            color: #555 !important;
+        }
+        
+        /* Welcome Screen */
+        body.light-mode #welcome-screen button {
+            background-color: #ffffff !important;
+            border-color: #ccc !important;
+            color: #333 !important;
+        }
+        body.light-mode #welcome-screen button:hover {
+            background-color: #f0f0f0 !important;
+        }
+        
+        /* Loading indicator */
+        body.light-mode #loading-indicator {
+            background-color: #f0f0f0 !important;
+            border-color: #ccc !important;
+        }
+
+        /* Markdown Styles (Light) */
+        body.light-mode .prose-invert {
+            filter: invert(0); /* Undo color inversion */
+            color: #1c1c1c !important;
+        }
+        body.light-mode .prose h1, body.light-mode .prose h2, body.light-mode .prose h3 {
+            color: #004d99 !important; /* Dark blue headers */
+        }
+        body.light-mode .prose pre {
+            background-color: #e8e8e8 !important;
+            color: #1c1c1c !important;
+            border: 1px solid #ddd;
+        }
+        body.light-mode .prose code {
+            color: #1c1c1c !important;
+        }
+        
+        /* General Utility Styles (from existing code) */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        body:not(.light-mode) ::-webkit-scrollbar-track { background: #343541; }
+        body.light-mode ::-webkit-scrollbar-track { background: #f0f0f0; }
+        body:not(.light-mode) ::-webkit-scrollbar-thumb { background: #565869; }
+        body.light-mode ::-webkit-scrollbar-thumb { background: #ccc; }
+        
+        .typing-dot {
+            width: 6px; height: 6px; border-radius: 50%; animation: typing 1.4s infinite ease-in-out both;
+            background-color: #9CA3AF;
+        }
+        body.light-mode .typing-dot {
+            background-color: #666 !important;
+        }
+        
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        
         @keyframes typing {
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
-
-        .glass-panel {
-            background: rgba(52, 53, 65, 0.9);
-            backdrop-filter: blur(10px);
-        }
-
-        /* Modal Styles */
-        #settings-modal {
-            backdrop-filter: blur(5px);
-        }
         
         /* Message Actions/Download Button Hover */
-        .message-actions {
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
+        .message-actions { opacity: 0; transition: opacity 0.2s ease-in-out; }
+        .group:hover .message-actions { opacity: 1; }
+
+        /* --- ICON VISIBILITY FIX V3: Max Specificity --- */
+        
+        /* Default Dark Mode */
+        .action-icon {
+            color: #9CA3AF !important; 
+            background-color: transparent !important;
         }
-        .group:hover .message-actions {
-            opacity: 1;
+        .action-icon:hover {
+            color: #ffffff !important; 
+            background-color: rgba(0, 0, 0, 0.2) !important;
         }
 
-        /* Temporary PDF container styles for contrast */
+        /* Light Mode Override */
+        body.light-mode .action-icon {
+            color: #1c1c1c !important; 
+            background-color: transparent !important;
+        }
+        body.light-mode .action-icon:hover {
+            color: #000000 !important; 
+            background-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Dropdown contrast fixes */
+        body.light-mode #download-dropdown {
+            background-color: #ffffff !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid #ccc !important;
+        }
+        body.light-mode #download-dropdown button {
+            color: #333 !important;
+        }
+        body.light-mode #download-dropdown button:hover {
+            background-color: #f0f0f0 !important;
+        }
+        /* ------------------------------------------- */
+
+        /* Temporary PDF container styles for contrast (ensures white background for printing) */
         .pdf-temp-container {
             background-color: white !important;
             color: black !important;
             padding: 30px;
-            width: 794px; /* A4 width in pixels at 96 DPI */
+            width: 794px; 
+            /* BUG FIX: Ensure all nested elements are black for capture */
+            --tw-text-opacity: 1;
+            color: rgb(0 0 0 / var(--tw-text-opacity)) !important; 
         }
-        .pdf-temp-container .prose {
-             color: black !important;
+        .pdf-temp-container * {
+            color: black !important; 
+            background-color: transparent !important;
         }
-        .pdf-temp-container .prose-invert {
-            filter: invert(0); /* Undo inverse styles for printing */
-            color: black !important;
-        }
-        .pdf-temp-container .prose pre {
-            background-color: #f5f5f5 !important;
-            color: #333 !important;
-            border: 1px solid #ddd;
-        }
-        .pdf-temp-container .prose h1,
-        .pdf-temp-container .prose h2,
-        .pdf-temp-container .prose h3 {
-            color: #095797 !important; /* Use a dark color for headers */
+        .pdf-temp-container .prose { color: black !important; }
+        .pdf-temp-container .prose-invert { filter: invert(0); color: black !important; }
+        .pdf-temp-container .prose pre { 
+            background-color: #f5f5f5 !important; 
+            color: #333 !important; 
+            border: 1px solid #ddd; 
         }
         .pdf-temp-container .prose code {
-            color: #000 !important;
+            color: #333 !important;
         }
+        .pdf-temp-container .prose h1, .pdf-temp-container .prose h2, .pdf-temp-container .prose h3 { 
+            color: #095797 !important; 
+        }
+
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
     <!-- Sidebar (History) -->
-    <aside class="hidden md:flex flex-col w-[260px] bg-[#202123] p-2 transition-all duration-300" id="sidebar">
+    <aside class="hidden md:flex flex-col w-[260px] p-2 transition-all duration-300" id="sidebar">
         <button onclick="startNewChat()" class="flex items-center gap-3 px-3 py-3 rounded-md border border-white/20 hover:bg-gray-900 transition-colors text-sm text-white mb-4">
             <i class="ph ph-plus text-lg"></i>
             New Chat
@@ -170,7 +273,7 @@
         <div class="border-t border-white/20 pt-2 mt-2">
             <button onclick="openSettings()" class="flex items-center gap-3 px-3 py-3 w-full rounded-md hover:bg-[#2A2B32] text-sm text-white transition-colors">
                 <i class="ph ph-gear text-lg"></i>
-                API Settings
+                Settings & API
             </button>
         </div>
     </aside>
@@ -178,7 +281,7 @@
     <!-- Main Chat Area -->
     <main class="flex-1 flex flex-col relative h-full">
         
-        <!-- Mobile Header (Added menu button to show sidebar on mobile) -->
+        <!-- Mobile Header -->
         <header class="md:hidden flex items-center justify-between p-4 bg-[#343541] border-b border-white/10">
             <button onclick="toggleMobileSidebar()" class="text-gray-300 hover:text-white"><i class="ph ph-list text-2xl"></i></button>
             <span class="font-medium" id="mobile-chat-title">Agentic AI</span>
@@ -222,7 +325,7 @@
             <div id="messages-list" class="flex flex-col"></div>
             
             <!-- Loading Indicator -->
-            <div id="loading-indicator" class="hidden w-full border-b border-black/10 dark:border-gray-900/50 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-[#444654]">
+            <div id="loading-indicator" class="hidden w-full border-b border-black/10 dark:border-gray-900/50 text-gray-800 dark:text-gray-100">
                 <div class="max-w-3xl mx-auto gap-4 p-4 md:gap-6 md:p-6 flex">
                     <div class="w-8 flex flex-col relative items-end">
                         <div class="w-8 h-8 rounded-sm bg-green-500 flex items-center justify-center">
@@ -241,7 +344,7 @@
         </div>
 
         <!-- Input Area -->
-        <div class="absolute bottom-0 left-0 w-full glass-panel border-t border-white/10 pt-2 pb-6 px-4">
+        <div class="absolute bottom-0 left-0 w-full glass-panel pt-2 pb-6 px-4">
             <div class="max-w-3xl mx-auto relative">
                 
                 <!-- File Preview Area -->
@@ -250,7 +353,7 @@
                 </div>
 
                 <!-- Input Box -->
-                <div class="relative flex items-end w-full p-3 bg-[#40414F] border border-transparent focus-within:border-white/20 rounded-xl shadow-md overflow-hidden ring-offset-2 ring-offset-transparent">
+                <div class="relative flex items-end w-full p-3 input-wrapper border border-transparent focus-within:border-white/20 rounded-xl shadow-md overflow-hidden ring-offset-2 ring-offset-transparent">
                     
                     <!-- Attachment Button -->
                     <button onclick="document.getElementById('file-upload').click()" class="p-2 mr-2 text-gray-400 hover:text-white transition-colors rounded-md" title="Attach file/image">
@@ -259,7 +362,7 @@
                     <input type="file" id="file-upload" class="hidden" multiple accept="image/*, .txt, .md, .js, .html, .css, .py, .json" onchange="handleFileSelect(event)">
 
                     <!-- Text Area -->
-                    <textarea id="user-input" rows="1" class="w-full max-h-[200px] bg-transparent border-0 focus:ring-0 p-0 py-2 pl-2 text-white placeholder-gray-400 resize-none overflow-y-auto outline-none" placeholder="Send a message..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                    <textarea id="user-input" rows="1" class="w-full max-h-[200px] bg-transparent border-0 focus:ring-0 p-0 py-2 pl-2 text-white placeholder-gray-400 resize-none overflow-y-auto outline-none" placeholder="Send a message (Ctrl+V to paste screenshot)..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
                     
                     <!-- Voice Button -->
                     <button id="voice-btn" onclick="toggleVoice()" class="p-2 ml-2 text-gray-400 hover:text-white transition-colors rounded-md" title="Use Voice Input">
@@ -281,8 +384,16 @@
     <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60">
         <div class="bg-[#202123] w-full max-w-md p-6 rounded-lg border border-white/10 shadow-xl transform transition-all">
-            <h2 class="text-xl font-semibold mb-4 text-white">API Settings</h2>
+            <h2 class="text-xl font-semibold mb-4 text-white">Application Settings</h2>
             
+            <!-- Theme Toggle -->
+            <div class="mb-6 flex items-center justify-between">
+                <label class="text-sm text-gray-300">Background Theme</label>
+                <button id="theme-toggle" onclick="toggleTheme()" class="w-14 h-8 flex items-center rounded-full p-1 transition duration-300 ease-in-out bg-gray-600">
+                    <div class="bg-white w-6 h-6 rounded-full shadow-md transform transition duration-300 ease-in-out"></div>
+                </button>
+            </div>
+
             <div class="mb-4">
                 <label class="block text-sm text-gray-300 mb-2">Google Gemini API Key</label>
                 <input type="password" id="api-key-input" class="w-full bg-[#343541] border border-white/20 rounded p-2 text-white focus:border-[#10a37f] focus:outline-none" placeholder="sk-...">
@@ -294,7 +405,7 @@
 
             <div class="flex justify-end gap-3">
                 <button onclick="closeSettings()" class="px-4 py-2 text-sm text-gray-300 hover:text-white">Cancel</button>
-                <button onclick="saveSettings()" class="px-4 py-2 text-sm bg-[#10a37f] hover:bg-[#1a885d] text-white rounded transition-colors">Save Key</button>
+                <button onclick="saveSettings()" class="px-4 py-2 text-sm bg-[#10a37f] hover:bg-[#1a885d] text-white rounded transition-colors">Save Settings</button>
             </div>
         </div>
     </div>
@@ -307,17 +418,19 @@
         // --- State ---
         const LOCAL_STORAGE_KEY_SESSIONS = 'agentic_ai_sessions';
         const LOCAL_STORAGE_KEY_ACTIVE = 'agentic_ai_active_session_id';
+        const LOCAL_STORAGE_KEY_THEME = 'app_theme';
 
-        let allSessions = [];       // Array storing metadata for all sessions
-        let activeSessionId = null; // ID of the currently loaded session
-        let chatHistory = [];       // Messages of the active session (used for API context)
-        let attachments = [];       // Attachments for the *next* user message
+        let allSessions = [];       
+        let activeSessionId = null; 
+        let chatHistory = [];       
+        let attachments = [];       
         let isRecording = false;
+        let isDarkMode = true; // State for theme
         let recognition;
 
-        // --- PDF Constants for Presentation Styling (NEW) ---
-        const SLIDE_WIDTH = 297; // A4 landscape width in mm
-        const SLIDE_HEIGHT = 210; // A4 landscape height in mm
+        // --- PDF Constants ---
+        const SLIDE_WIDTH = 297; 
+        const SLIDE_HEIGHT = 210; 
         const MARGIN = 15;
         const ACCENT_COLOR = '#19C37D';
         const FONT_COLOR = '#ECECF1';
@@ -349,13 +462,12 @@
         }
 
 
-        // --- History & Persistence Management ---
+        // --- History & Persistence Management (Unchanged logic) ---
 
         function loadSessionList() {
             try {
                 const storedSessions = localStorage.getItem(LOCAL_STORAGE_KEY_SESSIONS);
                 allSessions = storedSessions ? JSON.parse(storedSessions) : [];
-                // Sort by most recent activity
                 allSessions.sort((a, b) => new Date(b.lastActive) - new Date(a.lastActive));
             } catch (e) {
                 console.error("Error loading sessions from localStorage:", e);
@@ -378,10 +490,8 @@
                 history: chatHistory 
             };
             
-            // Save full history content
             localStorage.setItem(`session_content_${activeSessionId}`, JSON.stringify(chatHistory));
 
-            // Update session list metadata
             if (sessionIndex !== -1) {
                 allSessions[sessionIndex].lastActive = sessionData.lastActive;
                 allSessions.sort((a, b) => new Date(b.lastActive) - new Date(a.lastActive));
@@ -430,7 +540,6 @@
         }
 
         function startNewChat() {
-            // Save the existing session state before switching
             saveCurrentSession(); 
             
             activeSessionId = generateUUID();
@@ -438,7 +547,6 @@
             attachments = [];
             localStorage.setItem(LOCAL_STORAGE_KEY_ACTIVE, activeSessionId);
 
-            // Add new session placeholder to the list
             allSessions.unshift({
                 id: activeSessionId,
                 title: "New Chat...",
@@ -446,7 +554,6 @@
             });
             saveSessionList();
             
-            // Clear UI
             document.getElementById('messages-list').innerHTML = '';
             document.getElementById('welcome-screen').style.display = 'flex';
             document.getElementById('mobile-chat-title').textContent = 'Agentic AI';
@@ -455,10 +562,8 @@
         }
 
         function loadSession(sessionId) {
-            // Do nothing if already active
             if (activeSessionId === sessionId) return;
 
-            // Save the old session before loading new one
             saveCurrentSession();
 
             activeSessionId = sessionId;
@@ -472,23 +577,20 @@
                 chatHistory = [];
             }
             
-            // Render UI for the loaded session
             renderMessages();
             renderSidebar();
         }
 
         function deleteSession(event, sessionId) {
-            event.stopPropagation(); // Prevent the click from triggering loadSession
+            event.stopPropagation(); 
 
             if (!confirm("Are you sure you want to delete this chat history?")) return;
 
-            // Remove from metadata list
             allSessions = allSessions.filter(s => s.id !== sessionId);
             saveSessionList();
             localStorage.removeItem(`session_content_${sessionId}`);
 
             if (activeSessionId === sessionId) {
-                // If we deleted the active session, start a new one
                 startNewChat(); 
             } else {
                 renderSidebar();
@@ -500,7 +602,6 @@
             list.innerHTML = '';
             document.getElementById('welcome-screen').style.display = 'none';
 
-            // Find session title for mobile header
             const session = allSessions.find(s => s.id === activeSessionId);
             document.getElementById('mobile-chat-title').textContent = session ? session.title : 'Agentic AI';
             
@@ -514,13 +615,64 @@
                 }));
                 appendMessageToUI(message.role, text, msgAttachments);
             });
-            // Scroll to bottom after loading messages
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
 
+        // --- Theme Toggle Logic ---
+        
+        function loadTheme() {
+            const savedTheme = localStorage.getItem(LOCAL_STORAGE_KEY_THEME);
+            isDarkMode = savedTheme !== 'light';
+            applyTheme();
+        }
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem(LOCAL_STORAGE_KEY_THEME, isDarkMode ? 'dark' : 'light');
+            applyTheme();
+        }
+
+        function applyTheme() {
+            const body = document.body;
+            const toggle = document.getElementById('theme-toggle');
+            
+            if (isDarkMode) {
+                body.classList.remove('light-mode');
+                // Sidebar button style fix for dark mode
+                document.getElementById('sidebar')?.querySelectorAll('button').forEach(btn => {
+                    btn.classList.remove('text-gray-900'); 
+                    btn.classList.add('text-white'); 
+                });
+
+                if (toggle) {
+                    toggle.classList.remove('bg-green-500');
+                    toggle.classList.add('bg-gray-600');
+                    toggle.querySelector('div').classList.remove('translate-x-6');
+                }
+            } else {
+                body.classList.add('light-mode');
+                // Sidebar button style fix for light mode
+                document.getElementById('sidebar')?.querySelectorAll('button').forEach(btn => {
+                    btn.classList.remove('text-white'); 
+                    btn.classList.add('text-gray-900'); 
+                });
+
+                if (toggle) {
+                    toggle.classList.remove('bg-gray-600');
+                    toggle.classList.add('bg-green-500'); 
+                    toggle.querySelector('div').classList.add('translate-x-6');
+                }
+            }
+        }
+
+
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
+            loadTheme(); // Load theme first
             updateKeyStatus();
+
+            // FEATURE IMPLEMENTATION: Paste Listener
+            document.addEventListener('paste', handlePaste);
 
             marked.setOptions({
                 highlight: function(code, lang) {
@@ -530,21 +682,17 @@
                 langPrefix: 'hljs language-'
             });
 
-            // Load all session metadata
             loadSessionList();
             
-            // Determine active session
             const storedActiveId = localStorage.getItem(LOCAL_STORAGE_KEY_ACTIVE);
             
             if (allSessions.length > 0) {
                 const sessionToLoad = allSessions.find(s => s.id === storedActiveId) || allSessions[0];
                 loadSession(sessionToLoad.id);
             } else {
-                // Start a new chat if no history exists
                 startNewChat();
             }
 
-            // Setup Voice Recognition (existing logic)
             if ('webkitSpeechRecognition' in window) {
                 recognition = new webkitSpeechRecognition();
                 recognition.continuous = false;
@@ -567,15 +715,15 @@
                 document.getElementById('voice-btn').style.display = 'none';
             }
 
-            // Auto-open settings if no key
             if(!apiKey) {
                 setTimeout(openSettings, 500);
             }
         });
 
-        // --- Settings Functions ---
+        // --- Settings Functions (Unchanged) ---
         function openSettings() {
             document.getElementById('api-key-input').value = apiKey;
+            applyTheme(); // Ensure toggle state is correct when modal opens
             document.getElementById('settings-modal').classList.remove('hidden');
             document.getElementById('settings-modal').classList.add('flex');
         }
@@ -608,7 +756,7 @@
             }
         }
         
-        // --- UI & Input Functions ---
+        // --- UI & Input Functions (Minor Changes) ---
 
         function toggleMobileSidebar() {
              const sidebar = document.getElementById('sidebar');
@@ -653,9 +801,42 @@
                 icon.className = "ph ph-microphone-slash text-xl";
                 btn.classList.add('text-red-500', 'animate-pulse');
             }
-        }
+        }updateFilePreview
 
         // --- File Handling ---
+
+        // NEW: Handles image pasting from clipboard
+        function handlePaste(event) {
+            if (!apiKey) return;
+            
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            
+            for (const item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    event.preventDefault(); // Stop default paste behavior
+        
+                    const file = item.getAsFile();
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const base64Data = e.target.result.split(',')[1];
+                            const mimeType = file.type || 'image/png';
+                            
+                            attachments.push({
+                                name: `screenshot-${new Date().getTime()}.${mimeType.split('/').pop() || 'png'}`,
+                                mimeType: mimeType,
+                                data: base64Data,
+                                isImage: true
+                            });
+                            updateFilePreview();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                    // Only process the first image found
+                    break; 
+                }
+            }
+        }
 
         function handleFileSelect(event) {
             const files = event.target.files;
@@ -682,6 +863,9 @@
 
         function updateFilePreview() {
             const container = document.getElementById('file-preview');
+            // Check current theme state for file preview background contrast
+            const attBg = isDarkMode ? 'bg-black/20 text-white' : 'bg-gray-200 text-black';
+
             if (attachments.length === 0) {
                 container.classList.add('hidden');
                 return;
@@ -691,7 +875,7 @@
             
             attachments.forEach((file, index) => {
                 const div = document.createElement('div');
-                div.className = "relative flex items-center gap-2 bg-[#343541] p-2 rounded-lg border border-white/20 min-w-[120px] max-w-[200px]";
+                div.className = `relative flex items-center gap-2 p-2 rounded-lg border border-white/20 min-w-[120px] max-w-[200px] ${attBg}`;
                 
                 let icon = '<i class="ph ph-file-text text-xl text-blue-400"></i>';
                 if (file.isImage) {
@@ -700,7 +884,7 @@
 
                 div.innerHTML = `
                     ${icon}
-                    <span class="text-xs truncate text-gray-300 flex-1">${file.name}</span>
+                    <span class="text-xs truncate flex-1">${file.name}</span>
                     <button onclick="removeAttachment(${index})" class="text-gray-400 hover:text-red-400">
                         <i class="ph ph-x-circle"></i>
                     </button>
@@ -715,7 +899,7 @@
             updateFilePreview();
         }
         
-        // --- Download Dropdown Handlers ---
+        // --- Download Dropdown Handlers (Unchanged) ---
 
         function toggleDownloadDropdown(button) {
             const actionsDiv = button.closest('.message-actions');
@@ -735,7 +919,7 @@
             if (dropdown) dropdown.classList.add('hidden');
         }
 
-        // --- Core Logic ---
+        // --- Core Logic (Unchanged) ---
 
         async function sendMessage() {
             if (!apiKey) {
@@ -752,21 +936,17 @@
             inputEl.value = '';
             inputEl.style.height = 'auto';
             
-            // --- 1. Session Setup / Titling ---
             const currentSessionIndex = allSessions.findIndex(s => s.id === activeSessionId);
             if (currentSessionIndex !== -1 && allSessions[currentSessionIndex].title === "New Chat...") {
-                // Auto-title the session based on the first user message
                 let title = text.substring(0, 50);
                 if (text.length > 50) title += '...';
                 allSessions[currentSessionIndex].title = title || "Untitled Chat";
                 document.getElementById('mobile-chat-title').textContent = title;
             }
             
-            // 2. Add User Message to UI
             const currentAttachments = [...attachments];
             appendMessageToUI('user', text, currentAttachments);
             
-            // 3. Prepare parts for API and update active chatHistory
             const userParts = [];
             if (text) userParts.push({ text: text });
             currentAttachments.forEach(att => {
@@ -783,16 +963,13 @@
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
 
             try {
-                // 4. Call API with FULL history
                 const responseText = await callGemini(chatHistory);
                 
                 loadingEl.classList.add('hidden');
                 
-                // 5. Add Model Response to UI and History
                 appendMessageToUI('model', responseText);
                 chatHistory.push({ role: "model", parts: [{ text: responseText }] });
                 
-                // 6. Save State
                 saveCurrentSession(); 
 
             } catch (error) {
@@ -813,7 +990,6 @@
                      errorMsg = `An unknown API error occurred: ${error.message}.`;
                 }
 
-                // If the user's last message caused an error, remove it from chatHistory
                 chatHistory.pop(); 
                 
                 appendMessageToUI('error', errorMsg);
@@ -826,7 +1002,6 @@
             const list = document.getElementById('messages-list');
             const div = document.createElement('div');
             
-            const bgColor = role === 'user' ? 'bg-[#343541]' : 'bg-[#444654]';
             const icon = role === 'user' 
                 ? '<div class="w-8 h-8 rounded-sm bg-purple-600 flex items-center justify-center"><i class="ph ph-user text-white"></i></div>'
                 : '<div class="w-8 h-8 rounded-sm bg-green-500 flex items-center justify-center"><i class="ph ph-robot text-white"></i></div>';
@@ -835,16 +1010,19 @@
             
             div.dataset.rawContent = role === 'model' ? encodeURIComponent(rawText) : '';
 
-            div.className = `w-full border-b border-black/10 dark:border-gray-900/50 text-gray-800 dark:text-gray-100 ${bgColor} group`;
+            // Using class selectors for background now
+            div.className = `w-full border-b text-gray-800 dark:text-gray-100 message-row-${role} group`;
             
             let attachmentHTML = '';
             if (messageAttachments.length > 0) {
+                // Adjusting attachment background based on theme (using inline style for contrast on files)
+                const attBg = isDarkMode ? 'bg-black/20 text-white' : 'bg-gray-200 text-black';
                 attachmentHTML = `<div class="flex gap-2 mb-3 flex-wrap">`;
                 messageAttachments.forEach(att => {
                     if (att.isImage) {
                         attachmentHTML += `<img src="data:${att.mimeType};base64,${att.data}" class="max-h-48 rounded-md border border-white/10 hover:opacity-90 transition-opacity">`;
                     } else {
-                        attachmentHTML += `<div class="flex items-center gap-2 bg-black/20 p-2 rounded text-sm"><i class="ph ph-file"></i> ${att.name}</div>`;
+                        attachmentHTML += `<div class="flex items-center gap-2 ${attBg} p-2 rounded text-sm"><i class="ph ph-file"></i> ${att.name}</div>`;
                     }
                 });
                 attachmentHTML += `</div>`;
@@ -865,18 +1043,18 @@
             
             div.dataset.renderedContent = role === 'model' ? encodeURIComponent(parsedHtmlContent) : '';
 
-
-            // --- Download and Copy Action Menu (Enhanced with Presentation PDF) ---
+            // --- Download and Copy Action Menu (FIXED THEME CLASSES + INLINE STYLES FOR PHOSPHOR ICONS) ---
             let actionsMenu = '';
             if (role === 'model') {
+                // We ensure the inner icon gets the color of the parent button via 'inherit' or explicit CSS class 'action-icon'
                 actionsMenu = `
                 <div class="absolute top-0 right-0 p-2 message-actions flex gap-1">
-                    <button onclick="copyRawContent(this)" class="p-1 rounded hover:bg-black/20 text-gray-400 hover:text-white transition-colors" title="Copy to clipboard">
-                        <i class="ph ph-copy text-lg"></i>
+                    <button onclick="copyRawContent(this)" class="p-1 rounded transition-colors action-icon" title="Copy to clipboard">
+                        <i class="ph ph-copy text-lg" style="color: inherit;"></i>
                     </button>
                     <div class="relative inline-block text-left">
-                        <button onclick="toggleDownloadDropdown(this)" class="p-1 rounded hover:bg-black/20 text-gray-400 hover:text-white transition-colors" title="Download">
-                            <i class="ph ph-download text-lg"></i>
+                        <button onclick="toggleDownloadDropdown(this)" class="p-1 rounded transition-colors action-icon" title="Download">
+                            <i class="ph ph-download text-lg" style="color: inherit;"></i>
                         </button>
                         <div class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#202123] ring-1 ring-white/10 focus:outline-none hidden z-10" id="download-dropdown">
                             <div class="py-1">
@@ -918,152 +1096,10 @@
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
 
-        // --- PDF Presentation Logic (UNCHANGED) ---
 
-        function parseSlidesFromMarkdown(rawText) {
-            const lines = rawText.split('\n');
-            const slides = [];
-            let currentSlide = null;
-            let currentContent = [];
-
-            lines.forEach(line => {
-                const titleMatch = line.match(/##\s*SLIDE\s*\d*:\s*(.*)/i);
-                
-                if (titleMatch) {
-                    if (currentSlide) {
-                        currentSlide.content_points = currentContent;
-                        slides.push(currentSlide);
-                        currentContent = [];
-                    }
-                    currentSlide = {
-                        title: titleMatch[1].trim(),
-                        content_points: []
-                    };
-                } else if (currentSlide && (line.trim().startsWith('* ') || line.trim().startsWith('- '))) {
-                    // Capture bullet points
-                    currentContent.push(line.trim().substring(2).trim());
-                } else if (currentSlide && line.trim().length > 0 && !line.startsWith('```')) {
-                    // Capture general paragraphs as content points if not part of a code block
-                    currentContent.push(line.trim());
-                }
-            });
-
-            // Push the last slide
-            if (currentSlide) {
-                currentSlide.content_points = currentContent;
-                slides.push(currentSlide);
-            }
-            
-            return slides;
-        }
-
-        function generatePresentationPDF(rawText) {
-            if (typeof window.jspdf === 'undefined') {
-                alert("PDF library not loaded. Cannot generate PDF.");
-                return;
-            }
-
-            const slidesData = parseSlidesFromMarkdown(rawText);
-            if (slidesData.length === 0) {
-                alert("Could not parse structured slide data from the AI response. Ensure the response uses the '## SLIDE X: Title' format.");
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            slidesData.forEach((slide, index) => {
-                if (index > 0) {
-                    doc.addPage();
-                }
-
-                // 1. Setup Dark Background
-                doc.setFillColor(BG_COLOR);
-                doc.rect(0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, 'F');
-                
-                let y = MARGIN + 10;
-                
-                // 2. Draw Title
-                doc.setFontSize(28);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(ACCENT_COLOR);
-                
-                const titleLines = doc.splitTextToSize(slide.title, SLIDE_WIDTH - (MARGIN * 2));
-                titleLines.forEach(line => {
-                    doc.text(line, MARGIN, y);
-                    y += 10;
-                });
-                
-                // Draw Separator Line
-                doc.setDrawColor(ACCENT_COLOR);
-                doc.setLineWidth(0.7);
-                doc.line(MARGIN, y + 2, SLIDE_WIDTH - MARGIN, y + 2);
-                y += 15;
-
-                // 3. Draw Content Points
-                doc.setFontSize(14);
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(FONT_COLOR);
-                
-                const MAX_CONTENT_WIDTH = SLIDE_WIDTH - (MARGIN * 2);
-                
-                slide.content_points.forEach(point => {
-                    // Detect bold text or headers to style differently
-                    const isStrong = point.includes('**');
-                    let displayPoint = point.replace(/\*\*/g, '');
-
-                    if (y > SLIDE_HEIGHT - MARGIN) {
-                        doc.addPage();
-                        doc.setFillColor(BG_COLOR);
-                        doc.rect(0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, 'F');
-                        y = MARGIN + 10;
-                        doc.setFontSize(14);
-                        doc.setTextColor(FONT_COLOR);
-                    }
-
-                    if (isStrong) {
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(16);
-                        doc.setTextColor('#ffffff');
-                    } else {
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(14);
-                        doc.setTextColor(FONT_COLOR);
-                    }
-                    
-                    // Text Wrapping
-                    const wrappedText = doc.splitTextToSize(`• ${displayPoint}`, MAX_CONTENT_WIDTH - 10);
-                    
-                    wrappedText.forEach(line => {
-                        if (y > SLIDE_HEIGHT - MARGIN) {
-                            doc.addPage();
-                            doc.setFillColor(BG_COLOR);
-                            doc.rect(0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, 'F');
-                            y = MARGIN + 10;
-                        }
-                        doc.text(line, MARGIN + 5, y);
-                        y += 7; // Line spacing
-                    });
-                    y += 3; // Extra spacing after bullet point group
-                });
-                
-                // 4. Footer
-                doc.setFontSize(10);
-                doc.setTextColor(TEXT_GRAY);
-                doc.text(`Agentic AI Workspace | Slide ${index + 1} of ${slidesData.length}`, SLIDE_WIDTH - MARGIN, SLIDE_HEIGHT - 5, { align: 'right' });
-            });
-
-            doc.save(`presentation_ai_deck_${new Date().toISOString().slice(0, 10)}.pdf`);
-        }
-
-
-        // --- Download and Copy Logic (UPDATED) ---
+        // --- Download and Copy Logic ---
         
-        // New function to handle the HTML -> PDF conversion
+        // BUG FIX: Multi-page PDF generation logic with corrected coordinate slicing
         function downloadFormattedContent(btnElement) {
             hideDownloadDropdown(btnElement);
             const messageDiv = btnElement.closest('.group');
@@ -1072,20 +1108,20 @@
             const renderedHTML = decodeURIComponent(messageDiv.dataset.renderedContent);
             const fileName = `ai_formatted_response_${new Date().toISOString().slice(0, 10)}.pdf`;
             
-            // Create a temporary, hidden container for rendering the HTML
+            // 1. Create temporary container for rendering
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = renderedHTML;
-            tempDiv.className = 'pdf-temp-container'; // Apply styling overrides for contrast
+            tempDiv.className = 'pdf-temp-container'; 
             tempDiv.style.position = 'absolute';
             tempDiv.style.left = '-9999px'; 
             document.body.appendChild(tempDiv);
 
-            // Use html2canvas to render the hidden container to a canvas
+            // 2. Capture the full content element
             html2canvas(tempDiv, {
-                scale: 2, // Increase scale for better resolution
+                scale: 2, 
                 logging: false,
                 useCORS: true,
-                backgroundColor: '#ffffff' // Ensure white background
+                backgroundColor: '#ffffff'
             }).then(canvas => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({
@@ -1094,48 +1130,58 @@
                     format: 'a4'
                 });
                 
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-                const pdfWidth = doc.internal.pageSize.getWidth();
-                const pdfHeight = doc.internal.pageSize.getHeight();
-                
-                // Calculate scale to fit canvas width to PDF width (with margins)
+                const pdfWidth = doc.internal.pageSize.getWidth(); 
+                const pdfHeight = doc.internal.pageSize.getHeight(); 
                 const margin = 20;
-                const scale = (pdfWidth - 2 * margin) / canvasWidth;
-                let finalHeight = canvasHeight * scale;
                 
-                let position = margin;
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const imgCanvasWidth = canvas.width;
+                const imgCanvasHeight = canvas.height;
                 
-                // If the content is longer than one page, split it
-                let heightLeft = finalHeight;
+                // Calculate scale factor and final print height
+                const scale = (pdfWidth - 2 * margin) / imgCanvasWidth;
+                const finalImgHeight = imgCanvasHeight * scale; 
                 
-                while (heightLeft > 0) {
-                    if (position !== margin) {
-                        doc.addPage();
-                        position = margin;
-                    }
+                let heightConsumed = 0; 
+                let remainingHeight = finalImgHeight; 
+                
+                // Page dimensions for printing area (excluding margins)
+                const viewportHeight = pdfHeight - 2 * margin; 
+                
+                while (remainingHeight > 0) {
+                    const heightToPrint = Math.min(remainingHeight, viewportHeight);
                     
-                    const clipHeight = Math.min(heightLeft, pdfHeight - 2 * margin);
+                    // Source Y offset on the original canvas (in canvas pixel units)
+                    const sY = heightConsumed / scale; 
                     
+                    // Source Height of the current slice (in canvas pixel units)
+                    const sHeight = heightToPrint / scale; 
+
                     doc.addImage(
-                        canvas.toDataURL('image/jpeg', 1.0), 
+                        imgData, 
                         'JPEG', 
                         margin, 
-                        position, 
-                        pdfWidth - 2 * margin, 
-                        finalHeight, 
-                        undefined, 
-                        'FAST',
-                        0,
-                        -(finalHeight - heightLeft) / scale 
+                        margin,                             
+                        pdfWidth - 2 * margin,              
+                        heightToPrint,                      
+                        null, null, 0,                      
+                        0,                                  // Source X (sX)
+                        sY,                                 // Source Y (sY) 
+                        imgCanvasWidth,                     // Source Width (sWidth)
+                        sHeight                             // Source Height (sHeight)
                     );
 
-                    heightLeft -= clipHeight;
-                    position += clipHeight; // Prepare for next page if needed
+                    remainingHeight -= heightToPrint;
+                    heightConsumed += heightToPrint;
+                    
+                    if (remainingHeight > 0) {
+                        doc.addPage();
+                    }
                 }
-
+                
                 doc.save(fileName);
                 document.body.removeChild(tempDiv);
+                
             }).catch(error => {
                 console.error("Error generating formatted PDF:", error);
                 document.body.removeChild(tempDiv);
@@ -1167,7 +1213,137 @@
                 generatePresentationPDF(rawText);
 
             }
-            // Note: The old 'pdf' format is now handled by downloadFormattedContent()
+        }
+
+        function generatePresentationPDF(rawText) {
+            if (typeof window.jspdf === 'undefined') {
+                alert("PDF library not loaded. Cannot generate PDF.");
+                return;
+            }
+
+            const slidesData = parseSlidesFromMarkdown(rawText);
+            if (slidesData.length === 0) {
+                alert("Could not parse structured slide data from the AI response. Ensure the response uses the '## SLIDE X: Title' format.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            slidesData.forEach((slide, index) => {
+                if (index > 0) {
+                    doc.addPage();
+                }
+
+                doc.setFillColor(BG_COLOR);
+                doc.rect(0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, 'F');
+                
+                let y = MARGIN + 10;
+                
+                doc.setFontSize(28);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(ACCENT_COLOR);
+                
+                const titleLines = doc.splitTextToSize(slide.title, SLIDE_WIDTH - (MARGIN * 2));
+                titleLines.forEach(line => {
+                    doc.text(line, MARGIN, y);
+                    y += 10;
+                });
+                
+                doc.setDrawColor(ACCENT_COLOR);
+                doc.setLineWidth(0.7);
+                doc.line(MARGIN, y + 2, SLIDE_WIDTH - MARGIN, y + 2);
+                y += 15;
+
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(FONT_COLOR);
+                
+                const MAX_CONTENT_WIDTH = SLIDE_WIDTH - (MARGIN * 2);
+                
+                slide.content_points.forEach(point => {
+                    const isStrong = point.includes('**');
+                    let displayPoint = point.replace(/\*\*/g, '');
+
+                    if (y > SLIDE_HEIGHT - MARGIN) {
+                        doc.addPage();
+                        doc.setFillColor(BG_COLOR);
+                        doc.rect(0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, 'F');
+                        y = MARGIN + 10;
+                        doc.setFontSize(14);
+                        doc.setTextColor(FONT_COLOR);
+                    }
+
+                    if (isStrong) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(16);
+                        doc.setTextColor('#ffffff');
+                    } else {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(14);
+                        doc.setTextColor(FONT_COLOR);
+                    }
+                    
+                    const wrappedText = doc.splitTextToSize(`• ${displayPoint}`, MAX_CONTENT_WIDTH - 10);
+                    
+                    wrappedText.forEach(line => {
+                        if (y > SLIDE_HEIGHT - MARGIN) {
+                            doc.addPage();
+                            doc.setFillColor(BG_COLOR);
+                            doc.rect(0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, 'F');
+                            y = MARGIN + 10;
+                        }
+                        doc.text(line, MARGIN + 5, y);
+                        y += 7;
+                    });
+                    y += 3;
+                });
+                
+                doc.setFontSize(10);
+                doc.setTextColor(TEXT_GRAY);
+                doc.text(`Agentic AI Workspace | Slide ${index + 1} of ${slidesData.length}`, SLIDE_WIDTH - MARGIN, SLIDE_HEIGHT - 5, { align: 'right' });
+            });
+
+            doc.save(`presentation_ai_deck_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
+
+
+        function parseSlidesFromMarkdown(rawText) {
+            const lines = rawText.split('\n');
+            const slides = [];
+            let currentSlide = null;
+            let currentContent = [];
+
+            lines.forEach(line => {
+                const titleMatch = line.match(/##\s*SLIDE\s*\d*:\s*(.*)/i);
+                
+                if (titleMatch) {
+                    if (currentSlide) {
+                        currentSlide.content_points = currentContent;
+                        slides.push(currentSlide);
+                        currentContent = [];
+                    }
+                    currentSlide = {
+                        title: titleMatch[1].trim(),
+                        content_points: []
+                    };
+                } else if (currentSlide && (line.trim().startsWith('* ') || line.trim().startsWith('- '))) {
+                    currentContent.push(line.trim().substring(2).trim());
+                } else if (currentSlide && line.trim().length > 0 && !line.startsWith('```')) {
+                    currentContent.push(line.trim());
+                }
+            });
+
+            if (currentSlide) {
+                currentSlide.content_points = currentContent;
+                slides.push(currentSlide);
+            }
+            
+            return slides;
         }
 
         function copyRawContent(btnElement) {
@@ -1215,8 +1391,10 @@
             const copyButton = btnElement.closest('.message-actions').querySelector('[title="Copy to clipboard"]');
             
             const originalIcon = copyButton.innerHTML;
-            copyButton.innerHTML = '<i class="ph ph-check text-green-400 text-lg"></i>';
+            // Note: We only change the icon's inner content temporarily for feedback
+            copyButton.innerHTML = '<i class="ph ph-check text-green-400 text-lg" style="color: green !important;"></i>';
             setTimeout(() => {
+                // Restore the original icon content, relying on the fixed CSS/inline styles for color
                 copyButton.innerHTML = originalIcon;
             }, 2000);
         }
@@ -1227,9 +1405,7 @@
             const payload = {
                 contents: history,
                 systemInstruction: {
-                    // --- ENHANCED SYSTEM INSTRUCTION ---
                     parts: [{ text: "You are a highly capable Agentic AI Assistant, specialized in software engineering and content strategy. Your expertise includes coding, software architecture, UI/UX analysis, and summarizing complex documents. When generating code, provide complete, production-ready solutions. When analyzing designs, be critical and constructive. If asked to generate a presentation (using terms like 'PPT', 'slides', or 'deck'), you must structure your output using strict Markdown: use '## SLIDE X: Title' for slide headings and standard Markdown lists or paragraphs for content. Use Markdown for all formatting." }]
-                    // ------------------------------------
                 }
             };
 
@@ -1268,5 +1444,3 @@
     </script>
 </body>
 </html>
-
-
