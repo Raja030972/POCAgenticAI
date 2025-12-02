@@ -1,1 +1,1 @@
-# POCAgenticAI
+# Cognitive Executor
